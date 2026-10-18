@@ -36,6 +36,33 @@ Manual file auditing and text metric calculations create bottlenecks in modern d
 
 ## 🏗️ System Architecture
 
+```
+                    ┌────────────────────────┐
+                    │  Incoming Document     │
+                    │      (demo.txt)        │
+                    └───────────┬────────────┘
+                                │ (Upload)
+                                ▼
+                    ┌────────────────────────┐
+                    │   Input Cloud Bucket   │
+                    │      ('khan.boy')      │
+                    └───────────┬────────────┘
+                                │ (Stream Download)
+                                ▼
+               ┌──────────────────────────────────┐
+               │     Python Processing Core       │
+               │  - Line, Word & Character Parser │
+               └───────────┬──────────────────────┘
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+ ┌──────────────────────┐    ┌──────────────────────┐
+ │ Output Cloud Bucket  │    │  PostgreSQL Table    │
+ │ ('processed-results')│    │  ('document_logs')   │
+ │                      │    │                      │
+ │ 📄 result_demo.json  │    │  📊 State: PROCESSED │
+ └──────────────────────┘    └──────────────────────┘
+```
 
 ---
 
@@ -57,4 +84,3 @@ CREATE TABLE document_logs (
     status TEXT NOT NULL,
     word_count INT8 NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
-);
