@@ -34,34 +34,62 @@ Manual file auditing and text metric calculations create bottlenecks in modern d
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture & Live Data Flow
 
+<div align="center">
+
+```mermaid
+flowchart TD
+    subgraph Ingestion ["☁️ Step 1: Ingestion Layer"]
+        A["📄 Raw File (demo.txt)"] -->|"Upload Event"| B[("🪣 Input Bucket: 'khan.boy'")]
+    end
+
+    subgraph Processing ["⚡ Step 2: In-Memory Processing Engine"]
+        B -->|"Stream Download"| C{"⚙️ Python Worker (pipeline.py)"}
+        C -->|"Calculate Metrics"| D["📊 Lines: 1 | Words: 4 | Characters: 27"]
+    end
+
+    subgraph DualOutput ["🚀 Step 3: Real-Time Dual Sync"]
+        D -->|"Generate JSON"| E[("🪣 Output Bucket: 'processed-results'")]
+        D -->|"Upsert Query"| F[("🗄️ PostgreSQL: 'document_logs'")]
+    end
+
+    style B fill:#3ECF8E,stroke:#111,stroke-width:2px,color:#fff
+    style E fill:#3ECF8E,stroke:#111,stroke-width:2px,color:#fff
+    style C fill:#3776AB,stroke:#111,stroke-width:2px,color:#fff
+    style F fill:#4169E1,stroke:#111,stroke-width:2px,color:#fff
+    style D fill:#2b3137,stroke:#fff,stroke-width:1px,color:#fff
 ```
-                    ┌────────────────────────┐
-                    │  Incoming Document     │
-                    │      (demo.txt)        │
-                    └───────────┬────────────┘
-                                │ (Upload)
-                                ▼
-                    ┌────────────────────────┐
-                    │   Input Cloud Bucket   │
-                    │      ('khan.boy')      │
-                    └───────────┬────────────┘
-                                │ (Stream Download)
-                                ▼
-               ┌──────────────────────────────────┐
-               │     Python Processing Core       │
-               │  - Line, Word & Character Parser │
-               └───────────┬──────────────────────┘
-                           │
-             ┌─────────────┴─────────────┐
-             ▼                           ▼
- ┌──────────────────────┐    ┌──────────────────────┐
- │ Output Cloud Bucket  │    │  PostgreSQL Table    │
- │ ('processed-results')│    │  ('document_logs')   │
- │                      │    │                      │
- │ 📄 result_demo.json  │    │  📊 State: PROCESSED │
- └──────────────────────┘    └──────────────────────┘
+
+</div>
+
+### 🔄 End-to-End Execution Trace
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 👤 Client / User
+    participant IB as 🪣 Ingestion ('khan.boy')
+    participant PY as ⚙️ Python Core Engine
+    participant OB as 🪣 Output ('processed-results')
+    participant DB as 🗄️ PostgreSQL ('document_logs')
+
+    User->>IB: 1. Drop & upload 'demo.txt'
+    activate IB
+    Note over IB,PY: Continuous stream listening
+    PY->>IB: 2. Pull file stream into memory
+    deactivate IB
+    activate PY
+    Note over PY: Extract: Lines, Words & Characters
+    PY->>OB: 3. Save structured 'result_demo.txt.json'
+    activate OB
+    OB-->>PY: 200 OK (Report Saved)
+    deactivate OB
+    PY->>DB: 4. Execute UPSERT statement
+    activate DB
+    DB-->>PY: State Synced: [PROCESSED]
+    deactivate DB
+    deactivate PY
 ```
 
 ---
